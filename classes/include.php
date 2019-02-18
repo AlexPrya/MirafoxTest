@@ -7,5 +7,7 @@ function ShowArray()
 
 require("DB/DBConnector.php");
 require("DB/MySQLConnector.php");
-require("Process/Process.php");
 require("Process/Questions.php");
+require("Process/Emulator.php");
+require("Process/Results.php");
+require("Process/Process.php");

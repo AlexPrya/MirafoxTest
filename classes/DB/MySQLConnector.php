@@ -20,47 +20,65 @@ class MySQLConnector extends DBConnector
         }
         catch (\Exception $exception)
         {
-            echo($exception);
+            throw new \Exception($exception->getMessage());
         }
     }
 
     protected function connect()
     {
-        $connect =  new \mysqli(
-            $this->DBConf["db_host"],
-            $this->DBConf["db_login"],
-            $this->DBConf["db_password"],
-            $this->DBConf["db_name"]
-        );
-
-        if ($connect->connect_errno)
+        try
         {
-            throw new \Exception("ERROR " . $connect->connect_errno . ": " . $connect->connect_error);
-        }
+            $connect =  new \mysqli(
+                $this->DBConf["db_host"],
+                $this->DBConf["db_login"],
+                $this->DBConf["db_password"],
+                $this->DBConf["db_name"]
+            );
 
-        return $connect;
+            if ($connect->connect_errno)
+            {
+                throw new \Exception("ERROR " . $connect->connect_errno . ": " . $connect->connect_error);
+            }
+
+            return $connect;
+        }
+        catch (\Exception $exception)
+        {
+            throw new \Exception($exception->getMessage());
+        }
     }
 
     public function query($query)
     {
-        $result = null;
-        $responce = $this->Connect->query($query);
-
-        switch (gettype($responce))
+        try
         {
-            case "object":
-                while ($row = $responce->fetch_assoc())
-                {
-                    $result[$row["id"]] = $row;
-                }
+            $responce = $this->Connect->query($query);
+            $result = false;
 
-                break;
-            default:
-                $result = $responce;
+            switch (gettype($responce))
+            {
+                case "object":
+                    while ($row = $responce->fetch_assoc())
+                    {
+                        $result[] = $row;
+                    }
 
-                break;
+                    break;
+                case "boolean":
+                    $result = $responce;
+
+                    break;
+                default:
+                    throw new \Exception("Query error");
+
+                    break;
+            }
+
+            return $result;
         }
-
-        return $result;
+        catch (\Exception $exception)
+        {
+            throw new \Exception($exception->getMessage());
+        }
     }
 }

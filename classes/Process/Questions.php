@@ -7,40 +7,68 @@ use Main\DB\MySQLConnector;
 class Questions
 {
     private $DB;
-    private $QuestionsTable = "questions";
+    private $TableName = "questions";
     private $NumOfUseField = "num_of_uses";
     public $Questions;
 
 
     public function __construct($Complexity = [0, 100])
     {
-        $this->DB = new MySQLConnector();
+        try
+        {
+            $this->DB = new MySQLConnector();
 
-        $this->Questions = $this->prepareQuestions($Complexity);
+            $this->Questions = $this->prepareQuestions($Complexity);
+        }
+        catch (\Exception $exception)
+        {
+            throw new \Exception($exception->getMessage());
+        }
     }
 
+    /**
+     * Метод отдает результат работы класса
+     *
+     * @return array
+     * */
     public function getData()
     {
-        return $this->Questions;
-    }
-
-    protected function prepareQuestions($Complexity)
-    {
-        $questions = $this->getAllQuestions();
-        $selectedQuestion = $this->selectionOfQuestions($questions);
-        $result = $this->questionsEvaluation($selectedQuestion, $Complexity);
-
-        $this->incrementNumOfUses(array_keys($selectedQuestion));
+        $result = $this->Questions;
 
         return $result;
     }
 
     /**
-     * Функция выбора вопросов
+     * Метод подготовки вопросов
+     *
+     * @param array $Complexity
+     * @return array
+     * @throws \Exception
+     * */
+    protected function prepareQuestions($Complexity)
+    {
+        try
+        {
+            $questions = $this->getAllQuestions();
+            $selectedQuestion = $this->selectionOfQuestions($questions);
+            $result = $this->questionsEvaluation($selectedQuestion, $Complexity);
+
+            $this->incrementNumOfUses(array_keys($selectedQuestion));
+
+            return $result;
+        }
+        catch (\Exception $exception)
+        {
+            throw new \Exception($exception->getMessage());
+        }
+    }
+
+    /**
+     * Метод выбора вопросов
      * по алгоритму "Roulette wheel selection"
      *
      * @param array $questions
-     * @return array $return
+     * @return array
      * */
     protected function selectionOfQuestions($questions)
     {
@@ -68,7 +96,7 @@ class Questions
         for ($i = 0; $i < 40; $i++)
         {
             // генерируем случайное число от 0 до суммы весов
-            $rand = rand(0, $sumUses);
+            $rand = mt_rand(0, $sumUses);
             $curId = null;
             // Уменьшаем полученное число на размеры весов,
             // пока оно не станет миньше или равным 0
@@ -93,32 +121,70 @@ class Questions
         return $result;
     }
 
+    /**
+     * Метод проставляет вопросам сложность
+     *
+     * @param array $questions
+     * @param array $complexity
+     * @return array
+     * */
     protected function questionsEvaluation($questions, $complexity)
     {
 
         foreach ($questions as &$question)
         {
-            $rand = rand($complexity[0],$complexity[1]);
+            $rand = mt_rand($complexity[0],$complexity[1]);
             $question["complexity"] = $rand;
         }
 
         return $questions;
     }
 
+    /**
+     * Метод выборки вопросов
+     *
+     * @return array
+     * @throws \Exception
+     * */
     protected function getAllQuestions()
     {
-        $query = "SELECT * FROM `" . $this->QuestionsTable . "`";
-
-        return $this->DB->query($query);
+        try
+        {
+            $result = [];
+            $query = "SELECT * FROM `" . $this->TableName . "`";
+            $res = $this->DB->query($query);
+            foreach ($res as $row) {
+                $result[$row["id"]] = $row;
+            }
+            return $result;
+        }
+        catch (\Exception $exception)
+        {
+            throw new \Exception($exception->getMessage());
+        }
     }
 
+    /**
+     * Метод инкрементирует поле 'num_of_uses'
+     *
+     * @param array $questionsId
+     * @return boolean
+     * @throws \Exception
+     * */
     protected function incrementNumOfUses($questionsId = [])
     {
-        $query = "UPDATE `" . $this->QuestionsTable
-            . "` SET `" . $this->NumOfUseField . "` = `"
-            . $this->NumOfUseField . "` + 1 WHERE id IN ("
-            . trim(implode(", ", $questionsId)) . ");";
+        try
+        {
+            $query = "UPDATE `" . $this->TableName
+                . "` SET `" . $this->NumOfUseField . "` = `"
+                . $this->NumOfUseField . "` + 1 WHERE id IN ("
+                . trim(implode(", ", $questionsId)) . ");";
 
-        return $this->DB->query($query);
+            return $this->DB->query($query);
+        }
+        catch (\Exception $exception)
+        {
+            throw new \Exception($exception->getMessage());
+        }
     }
 }
